@@ -120,7 +120,9 @@ const AdminRecentTransactions: React.FC<AdminRecentTransactionsProps> = ({ recen
                       )}
                     </div>
                     <p className="text-xs sm:text-sm text-foreground/80">
-                      {transaction.description}
+                      {transaction.type === 'consulta' && (transaction as any).module_name
+                        ? `${(transaction as any).module_name} - ${transaction.description.replace(/^Consulta[:\s]*/i, '')}`
+                        : transaction.description}
                     </p>
                     
                     {/* Info secundária */}
@@ -137,9 +139,9 @@ const AdminRecentTransactions: React.FC<AdminRecentTransactionsProps> = ({ recen
                         </Badge>
                       )}
                       
-                      {/* Tipo */}
+                      {/* Tipo / Módulo */}
                       <Badge variant="outline" className="text-[9px] sm:text-[10px] px-1.5 py-0 h-3.5 sm:h-4 font-normal">
-                        {getTypeLabel(transaction.type)}
+                        {(transaction as any).module_name || getTypeLabel(transaction.type)}
                       </Badge>
                     </div>
                   </div>

@@ -353,7 +353,9 @@ class DashboardAdminController {
                 $stmt = $this->db->prepare($query);
                 $stmt->execute([intval($limit)]);
             } elseif ($filter === 'caixa') {
-                $query = "SELECT cc.id, cc.transaction_type as type, cc.description, cc.amount,
+                $query = "
+                    (
+                        SELECT cc.id, cc.transaction_type as type, cc.description, cc.amount,
                             cc.balance_before as cash_balance_before, cc.balance_after as cash_balance_after,
                             u.full_name as user_name,
                             u.email as user_email, u.username as user_login, u.id as user_id,
@@ -365,12 +367,55 @@ class DashboardAdminController {
                             cc.payment_method, cc.created_at, cc.external_id,
                             cc.reference_table, cc.reference_id, cc.created_by, cc.metadata,
                             wt.balance_before as user_balance_before, wt.balance_after as user_balance_after,
-                            'central_cash' as source_table
-                         FROM central_cash cc
-                         LEFT JOIN users u ON cc.user_id = u.id
-                         LEFT JOIN wallet_transactions wt ON cc.reference_table = 'wallet_transactions' AND cc.reference_id = wt.id
-                         WHERE (cc.payment_method IN ('pix', 'credit', 'paypal') OR (cc.transaction_type = 'consulta' AND cc.payment_method = 'saldo')) AND cc.amount > 0
-                         ORDER BY cc.created_at DESC LIMIT ?";
+                            'central_cash' as source_table,
+                            NULL as module_name
+                        FROM central_cash cc
+                        LEFT JOIN users u ON cc.user_id = u.id
+                        LEFT JOIN wallet_transactions wt ON cc.reference_table = 'wallet_transactions' AND cc.reference_id = wt.id
+                        WHERE (cc.payment_method IN ('pix', 'credit', 'paypal') OR (cc.transaction_type = 'consulta' AND cc.payment_method = 'saldo')) AND cc.amount > 0
+                    )
+                    UNION ALL
+                    (
+                        SELECT 
+                            CONCAT('cons_', c.id) as id,
+                            'consulta' as type,
+                            CONCAT('Consulta: ', c.document) as description,
+                            c.cost as amount,
+                            0 as cash_balance_before,
+                            0 as cash_balance_after,
+                            u.full_name as user_name,
+                            NULL as user_email, NULL as user_login, u.id as user_id,
+                            NULL as user_cpf, NULL as user_telefone,
+                            NULL as user_saldo, NULL as user_saldo_plano,
+                            NULL as user_plano, NULL as user_status,
+                            NULL as user_codigo_indicacao,
+                            NULL as user_created_at,
+                            'saldo' as payment_method,
+                            c.created_at,
+                            NULL as external_id,
+                            NULL as reference_table, NULL as reference_id, NULL as created_by, c.metadata,
+                            NULL as user_balance_before, NULL as user_balance_after,
+                            'consultations' as source_table,
+                            COALESCE(
+                                JSON_UNQUOTE(JSON_EXTRACT(c.metadata, '$.module_title')),
+                                CASE 
+                                    WHEN c.module_type = 'nome' THEN 'NOME COMPLETO'
+                                    WHEN c.module_type = 'cpf' THEN 'CPF'
+                                    ELSE UPPER(COALESCE(c.module_type, 'CONSULTA'))
+                                END
+                            ) as module_name
+                        FROM consultations c
+                        LEFT JOIN users u ON c.user_id = u.id
+                        WHERE c.status = 'completed' AND c.cost > 0
+                        AND NOT EXISTS (
+                            SELECT 1 FROM central_cash cc2 
+                            WHERE cc2.user_id = c.user_id 
+                            AND cc2.transaction_type = 'consulta'
+                            AND ABS(cc2.amount - c.cost) < 0.01
+                            AND ABS(TIMESTAMPDIFF(MINUTE, cc2.created_at, c.created_at)) < 5
+                        )
+                    )
+                    ORDER BY created_at DESC LIMIT ?";
                 $stmt = $this->db->prepare($query);
                 $stmt->execute([intval($limit)]);
             } elseif ($filter === 'recargas') {
@@ -440,6 +485,7 @@ class DashboardAdminController {
                             NULL as module_name
                         FROM central_cash cc
                         LEFT JOIN users u ON cc.user_id = u.id
+                        WHERE cc.transaction_type != 'consulta'
                     )
                     UNION ALL
                     (

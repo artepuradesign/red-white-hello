@@ -16,11 +16,11 @@ class DashboardAdminController {
         try {
             error_log("DASHBOARD_ADMIN: Buscando estatísticas do dashboard");
             
-            // Saldo em Caixa - soma TODAS as entradas via PIX, Cartão e PayPal (independente de ser plano ou recarga)
-            $cashQuery = "SELECT COALESCE(SUM(amount), 0) as total_cash 
-                         FROM central_cash 
-                         WHERE payment_method IN ('pix', 'credit', 'paypal')
-                         AND amount > 0";
+            // Saldo em Caixa - soma TODAS as entradas do central_cash + consultas realizadas
+            $cashQuery = "SELECT 
+                            COALESCE((SELECT SUM(ABS(amount)) FROM central_cash WHERE amount != 0), 0) +
+                            COALESCE((SELECT SUM(cost) FROM consultations WHERE status = 'completed' AND cost > 0), 0)
+                          as total_cash";
             $cashStmt = $this->db->prepare($cashQuery);
             $cashStmt->execute();
             $cashResult = $cashStmt->fetch(PDO::FETCH_ASSOC);
@@ -372,7 +372,6 @@ class DashboardAdminController {
                         FROM central_cash cc
                         LEFT JOIN users u ON cc.user_id = u.id
                         LEFT JOIN wallet_transactions wt ON cc.reference_table = 'wallet_transactions' AND cc.reference_id = wt.id
-                        WHERE (cc.payment_method IN ('pix', 'credit', 'paypal') OR (cc.transaction_type = 'consulta' AND cc.payment_method = 'saldo')) AND cc.amount > 0
                     )
                     UNION ALL
                     (
@@ -407,13 +406,6 @@ class DashboardAdminController {
                         FROM consultations c
                         LEFT JOIN users u ON c.user_id = u.id
                         WHERE c.status = 'completed' AND c.cost > 0
-                        AND NOT EXISTS (
-                            SELECT 1 FROM central_cash cc2 
-                            WHERE cc2.user_id = c.user_id 
-                            AND cc2.transaction_type = 'consulta'
-                            AND ABS(cc2.amount - c.cost) < 0.01
-                            AND ABS(TIMESTAMPDIFF(MINUTE, cc2.created_at, c.created_at)) < 5
-                        )
                     )
                     ORDER BY created_at DESC LIMIT ?";
                 $stmt = $this->db->prepare($query);

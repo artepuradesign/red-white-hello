@@ -266,113 +266,59 @@ const UnifiedAdminStatsCards: React.FC<UnifiedAdminStatsCardsProps> = ({ dashboa
     </div>
   );
 
+  const allCards = [...financialData, ...paymentData, ...systemData] as Array<typeof financialData[0] & { displayValue?: string }>;
+
+  const renderCard = (stat: any, index: number) => {
+    const Icon = stat.icon;
+    return (
+      <Card 
+        key={index} 
+        className="dashboard-card hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20 transition-all duration-300 cursor-pointer group overflow-hidden relative"
+        onClick={() => handleCardClick(stat.path)}
+      >
+        {/* Subtle gradient accent on top */}
+        <div className={`absolute top-0 left-0 right-0 h-1 ${stat.bgColor} opacity-60`} />
+        
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-5">
+          <CardTitle className="text-[11px] lg:text-xs font-semibold uppercase tracking-wider text-muted-foreground group-hover:text-primary/80 transition-colors">
+            {stat.title}
+          </CardTitle>
+          <div className={`p-2 lg:p-2.5 ${stat.bgColor} rounded-xl flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}>
+            <Icon className={`h-4 w-4 lg:h-5 lg:w-5 ${stat.iconColor}`} />
+          </div>
+        </CardHeader>
+        <CardContent className="pt-1 pb-4">
+          <div className="text-xl lg:text-2xl font-extrabold tracking-tight dashboard-text-primary mb-1.5">
+            {stat.displayValue || (
+              <SimpleCounter 
+                value={stat.rawValue} 
+                className="inline"
+                duration={5000}
+                formatAsCurrency={stat.isCurrency}
+              />
+            )}
+          </div>
+          <p className="text-[10px] lg:text-xs text-muted-foreground/80 leading-snug group-hover:text-foreground/60 transition-colors">
+            {stat.description}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* Linha 1 - Financeiro */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-        {financialData.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <Card 
-              key={index} 
-              className="dashboard-card hover:shadow-lg hover:shadow-primary/10 hover:border-primary/20 transition-all duration-300 cursor-pointer transform hover:scale-[1.02] min-h-[120px] lg:min-h-[140px] group"
-              onClick={() => handleCardClick(stat.path)}
-            >
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs lg:text-sm font-medium dashboard-text-primary line-clamp-2 leading-tight group-hover:text-primary transition-colors">
-                  {stat.title}
-                </CardTitle>
-                <div className={`p-1.5 lg:p-2 ${stat.bgColor} rounded-lg flex-shrink-0 group-hover:scale-105 transition-transform duration-300`}>
-                  <Icon className={`h-3 w-3 lg:h-4 lg:w-4 ${stat.iconColor}`} />
-                </div>
-              </CardHeader>
-              <CardContent className="pt-1 lg:pt-2">
-                <div className="text-lg lg:text-2xl font-bold dashboard-text-primary mb-1 line-clamp-1">
-                  {stat.displayValue || (
-                    <SimpleCounter 
-                      value={stat.rawValue} 
-                      className="inline"
-                      duration={5000}
-                      formatAsCurrency={stat.isCurrency}
-                    />
-                  )}
-                </div>
-                <p className="text-xs dashboard-text-muted leading-tight line-clamp-2 group-hover:text-foreground/70 transition-colors">
-                  {stat.description}
-                </p>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {financialData.map((stat, i) => renderCard(stat, i))}
       </div>
-      
+      {/* Linha 2 - Pagamentos */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-        {paymentData.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <Card 
-              key={index} 
-              className="dashboard-card hover:shadow-lg hover:shadow-primary/10 hover:border-primary/20 transition-all duration-300 cursor-pointer transform hover:scale-[1.02] min-h-[120px] lg:min-h-[140px] group"
-              onClick={() => handleCardClick(stat.path)}
-            >
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs lg:text-sm font-medium dashboard-text-primary line-clamp-2 leading-tight group-hover:text-primary transition-colors">
-                  {stat.title}
-                </CardTitle>
-                <div className={`p-1.5 lg:p-2 ${stat.bgColor} rounded-lg flex-shrink-0 group-hover:scale-105 transition-transform duration-300`}>
-                  <Icon className={`h-3 w-3 lg:h-4 lg:w-4 ${stat.iconColor}`} />
-                </div>
-              </CardHeader>
-              <CardContent className="pt-1 lg:pt-2">
-                <div className="text-lg lg:text-2xl font-bold dashboard-text-primary mb-1 line-clamp-1">
-                  <SimpleCounter 
-                    value={stat.rawValue} 
-                    className="inline"
-                    duration={5000}
-                    formatAsCurrency={stat.isCurrency}
-                  />
-                </div>
-                <p className="text-xs dashboard-text-muted leading-tight line-clamp-2 group-hover:text-foreground/70 transition-colors">
-                  {stat.description}
-                </p>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {paymentData.map((stat, i) => renderCard(stat, i + 4))}
       </div>
-      
+      {/* Linha 3 - Sistema */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-        {systemData.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <Card 
-              key={index} 
-              className="dashboard-card hover:shadow-lg hover:shadow-primary/10 hover:border-primary/20 transition-all duration-300 cursor-pointer transform hover:scale-[1.02] min-h-[120px] lg:min-h-[140px] group"
-              onClick={() => handleCardClick(stat.path)}
-            >
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs lg:text-sm font-medium dashboard-text-primary line-clamp-2 leading-tight group-hover:text-primary transition-colors">
-                  {stat.title}
-                </CardTitle>
-                <div className={`p-1.5 lg:p-2 ${stat.bgColor} rounded-lg flex-shrink-0 group-hover:scale-105 transition-transform duration-300`}>
-                  <Icon className={`h-3 w-3 lg:h-4 lg:w-4 ${stat.iconColor}`} />
-                </div>
-              </CardHeader>
-              <CardContent className="pt-1 lg:pt-2">
-                <div className="text-lg lg:text-2xl font-bold dashboard-text-primary mb-1 line-clamp-1">
-                  <SimpleCounter 
-                    value={stat.rawValue} 
-                    className="inline"
-                    duration={5000}
-                    formatAsCurrency={stat.isCurrency}
-                  />
-                </div>
-                <p className="text-xs dashboard-text-muted leading-tight line-clamp-2 group-hover:text-foreground/70 transition-colors">
-                  {stat.description}
-                </p>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {systemData.map((stat, i) => renderCard(stat, i + 8))}
       </div>
     </div>
   );

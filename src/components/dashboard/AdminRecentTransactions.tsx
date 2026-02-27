@@ -17,7 +17,7 @@ const AdminRecentTransactions: React.FC<AdminRecentTransactionsProps> = ({ recen
     }).format(value);
   };
 
-  // Remove duplicatas baseadas na descrição e valor para evitar exibir transações similares
+  // Remove duplicatas baseadas no usuário, valor e horário para evitar exibir transações similares
   const deduplicateTransactions = (transactions: DashboardTransaction[]) => {
     const seen = new Set();
     const seenBonusUsers = new Set();
@@ -28,7 +28,6 @@ const AdminRecentTransactions: React.FC<AdminRecentTransactionsProps> = ({ recen
           transaction.description.toLowerCase().includes('comissão') ||
           transaction.description.toLowerCase().includes('indicação')) {
         
-        // Extrair nome do usuário da descrição
         const userMatch = transaction.description.match(/(?:usuário|por|indicado por|Rodrigo)\s+(\w+)/i);
         const userName = userMatch ? userMatch[1] : transaction.user_name;
         const bonusKey = `${userName}-${transaction.amount}-bonus`;
@@ -40,9 +39,19 @@ const AdminRecentTransactions: React.FC<AdminRecentTransactionsProps> = ({ recen
         return true;
       }
       
-      // Para outras transações, usar lógica anterior
+      // Para consultas, agrupar por usuário + valor + minuto (evita duplicatas de consulta + saldo)
       const dateKey = new Date(transaction.created_at).toISOString().slice(0, 16);
-      const key = `${transaction.description}-${transaction.amount}-${dateKey}`;
+      if (transaction.type === 'consulta') {
+        const consultaKey = `consulta-${transaction.user_name}-${Math.abs(transaction.amount)}-${dateKey}`;
+        if (seen.has(consultaKey)) {
+          return false;
+        }
+        seen.add(consultaKey);
+        return true;
+      }
+      
+      // Para outras transações, usar descrição + valor + data
+      const key = `${transaction.description}-${Math.abs(transaction.amount)}-${dateKey}`;
       
       if (seen.has(key)) {
         return false;
@@ -146,7 +155,7 @@ const AdminRecentTransactions: React.FC<AdminRecentTransactionsProps> = ({ recen
                       }`}
                     >
                       {['recarga', 'plano', 'compra_modulo', 'entrada', 'consulta', 'compra_login'].includes(transaction.type) ? '+' : '-'}
-                      {formatCurrency(transaction.amount)}
+                      {formatCurrency(Math.abs(transaction.amount))}
                     </Badge>
                   </div>
                 </div>

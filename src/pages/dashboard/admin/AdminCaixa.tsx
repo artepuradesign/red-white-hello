@@ -4,7 +4,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DollarSign, RefreshCw } from 'lucide-react';
 import { useApiDashboardAdmin } from '@/hooks/useApiDashboardAdmin';
-import { formatDate } from '@/utils/historicoUtils';
 import DashboardTitleCard from '@/components/dashboard/DashboardTitleCard';
 
 const AdminCaixa = () => {
@@ -24,11 +23,41 @@ const AdminCaixa = () => {
     });
   };
 
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'recarga': return 'border-l-blue-500';
+      case 'plano': return 'border-l-emerald-500';
+      case 'comissao': return 'border-l-yellow-500';
+      case 'indicacao': return 'border-l-orange-500';
+      case 'saque': return 'border-l-red-500';
+      case 'compra_modulo': return 'border-l-violet-500';
+      case 'entrada': return 'border-l-teal-500';
+      case 'consulta': return 'border-l-cyan-500';
+      case 'compra_login': return 'border-l-pink-500';
+      default: return 'border-l-gray-500';
+    }
+  };
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'recarga': return 'RECARGA';
+      case 'plano': return 'COMPRA DE PLANO';
+      case 'comissao': return 'COMISSÃO';
+      case 'indicacao': return 'INDICAÇÃO';
+      case 'saque': return 'SAQUE';
+      case 'compra_modulo': return 'COMPRA DE MÓDULO';
+      case 'entrada': return 'ENTRADA';
+      case 'consulta': return 'CONSULTA';
+      case 'compra_login': return 'COMPRA LOGIN';
+      default: return type.toUpperCase();
+    }
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <DashboardTitleCard
         title="Saldo em Caixa"
-        subtitle="Todas as entradas: recargas, planos e compras de módulos"
+        subtitle="Todas as entradas: recargas, planos, consultas e compras"
         icon={<DollarSign className="h-4 w-4 sm:h-5 sm:w-5" />}
         backTo="/dashboard/admin"
         right={
@@ -86,7 +115,10 @@ const AdminCaixa = () => {
       <Card>
         <CardHeader className="p-3 sm:p-6">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base sm:text-lg">Histórico de Transações</CardTitle>
+            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+              <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              Histórico de Transações
+            </CardTitle>
             <Badge variant="secondary" className="text-xs">
               {transactions.length} registros
             </Badge>
@@ -99,138 +131,64 @@ const AdminCaixa = () => {
               <p className="text-muted-foreground">Carregando transações...</p>
             </div>
           ) : transactions.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-1.5 sm:space-y-2">
               {transactions.slice(0, displayLimit).map((transaction, index) => {
                 const tx = transaction as any;
-                let parsedMeta: any = null;
-                try {
-                  if (tx.metadata) {
-                    parsedMeta = typeof tx.metadata === 'string' ? JSON.parse(tx.metadata) : tx.metadata;
-                  }
-                } catch (e) {}
-
                 return (
-                <div 
-                  key={transaction.id || index}
-                  className="border rounded-lg p-3 sm:p-4 space-y-3 bg-card border-l-4 border-l-green-500"
-                >
-                  {/* Linha 1: ID, Data, Badges */}
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs font-mono">
-                        #{transaction.id || index}
-                      </Badge>
-                      <span className="text-xs sm:text-sm text-muted-foreground">
-                        {formatDate(transaction.created_at)}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <Badge variant="default" className="text-xs">
-                        {transaction.payment_method?.toUpperCase() || 'N/A'}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        {transaction.type || 'N/A'}
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  {/* Linha 2: Usuário + Valor */}
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0 space-y-0.5">
-                      <p className="font-semibold text-sm sm:text-base">
-                        {transaction.user_name || 'Usuário não identificado'}
-                      </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5">
-                        {tx.user_email && (
-                          <p className="text-xs text-muted-foreground">📧 {tx.user_email}</p>
-                        )}
-                        {tx.user_login && (
-                          <p className="text-xs text-muted-foreground">👤 @{tx.user_login}</p>
-                        )}
-                        {tx.user_cpf && (
-                          <p className="text-xs text-muted-foreground">🪪 CPF: {tx.user_cpf}</p>
-                        )}
-                        {tx.user_telefone && (
-                          <p className="text-xs text-muted-foreground">📱 Tel: {tx.user_telefone}</p>
-                        )}
-                        {tx.user_id && (
-                          <p className="text-xs text-muted-foreground">🔑 ID: {tx.user_id}</p>
-                        )}
-                        {tx.user_status && (
-                          <p className="text-xs text-muted-foreground">📌 Status: <span className="font-medium">{tx.user_status}</span></p>
-                        )}
-                        {tx.user_plano && (
-                          <p className="text-xs text-muted-foreground">📋 Plano: <span className="font-medium">{tx.user_plano}</span></p>
-                        )}
-                        {tx.user_codigo_indicacao && (
-                          <p className="text-xs text-muted-foreground">🎫 Cód. Indicação: <span className="font-mono">{tx.user_codigo_indicacao}</span></p>
-                        )}
-                        {tx.user_saldo !== undefined && tx.user_saldo !== null && (
-                          <p className="text-xs text-muted-foreground">💰 Saldo Carteira: <span className="font-mono font-semibold">{formatCurrency(tx.user_saldo)}</span></p>
-                        )}
-                        {tx.user_saldo_plano !== undefined && tx.user_saldo_plano !== null && (
-                          <p className="text-xs text-muted-foreground">💎 Saldo Plano: <span className="font-mono font-semibold">{formatCurrency(tx.user_saldo_plano)}</span></p>
-                        )}
-                        {tx.user_created_at && (
-                          <p className="text-xs text-muted-foreground">📅 Cadastro: {formatDate(tx.user_created_at)}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right ml-3 flex-shrink-0">
-                      <p className="font-bold text-lg sm:text-xl text-green-600">
-                        {formatCurrency(transaction.amount)}
-                      </p>
-                    </div>
-                  </div>
+                  <div 
+                    key={transaction.id || index}
+                    className={`p-2.5 sm:p-3 bg-muted/50 rounded-lg border-l-4 ${getTypeColor(transaction.type)}`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0 space-y-1">
+                        {/* Nome do usuário */}
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs sm:text-sm font-semibold text-primary">
+                            👤 {transaction.user_name || 'Usuário não identificado'}
+                          </span>
+                        </div>
 
-                  {/* Linha 3: Detalhes da Transação */}
-                  <div className="pt-2 border-t border-border/50 space-y-1">
-                    <p className="text-xs sm:text-sm text-muted-foreground">
-                      {transaction.description}
-                    </p>
-                    
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 pt-1">
-                      {/* Saldo da CARTEIRA do usuário antes/depois da transação */}
-                      {tx.user_balance_before !== undefined && tx.user_balance_before !== null && (
-                        <p className="text-[10px] sm:text-xs text-muted-foreground">
-                          👛 Carteira Antes: <span className="font-mono">{formatCurrency(tx.user_balance_before)}</span>
+                        {/* Descrição */}
+                        <p className="text-xs sm:text-sm text-foreground/80">
+                          {transaction.type === 'consulta' && tx.module_name
+                            ? `${tx.module_name} - ${transaction.description.replace(/^Consulta[:\s]*/i, '')}`
+                            : transaction.description}
                         </p>
-                      )}
-                      {tx.user_balance_after !== undefined && tx.user_balance_after !== null && (
-                        <p className="text-[10px] sm:text-xs text-muted-foreground">
-                          👛 Carteira Depois: <span className="font-mono">{formatCurrency(tx.user_balance_after)}</span>
-                        </p>
-                      )}
-                      {tx.external_id && (
-                        <p className="text-[10px] sm:text-xs text-muted-foreground">
-                          🔗 ID Externo: <span className="font-mono">{tx.external_id}</span>
-                        </p>
-                      )}
-                      {tx.reference_table && (
-                        <p className="text-[10px] sm:text-xs text-muted-foreground">
-                          📋 Ref: <span className="font-mono">{tx.reference_table}{tx.reference_id ? ` #${tx.reference_id}` : ''}</span>
-                        </p>
-                      )}
-                      {tx.created_by && (
-                        <p className="text-[10px] sm:text-xs text-muted-foreground">
-                          🛠️ Criado por: <span className="font-mono">{tx.created_by}</span>
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Metadata */}
-                    {parsedMeta && Object.keys(parsedMeta).length > 0 && (
-                      <div className="pt-1">
-                        <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-0.5">📦 Metadata:</p>
-                        <div className="bg-muted/50 rounded p-2 text-[10px] sm:text-xs font-mono text-muted-foreground space-y-0.5">
-                          {Object.entries(parsedMeta).map(([key, value]) => (
-                            <p key={key}>{key}: {String(value)}</p>
-                          ))}
+                        
+                        {/* Data + Badges */}
+                        <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                          <span className="text-[10px] sm:text-xs text-muted-foreground">
+                            {new Date(transaction.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })} {new Date(transaction.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          
+                          {transaction.payment_method && (
+                            <Badge variant="outline" className="text-[9px] sm:text-[10px] px-1.5 py-0 h-3.5 sm:h-4 font-normal uppercase">
+                              {transaction.payment_method}
+                            </Badge>
+                          )}
+                          
+                          <Badge variant="outline" className="text-[9px] sm:text-[10px] px-1.5 py-0 h-3.5 sm:h-4 font-normal">
+                            {tx.module_name || getTypeLabel(transaction.type)}
+                          </Badge>
                         </div>
                       </div>
-                    )}
+                      
+                      {/* Valor */}
+                      <div className="flex-shrink-0 text-right">
+                        <Badge 
+                          variant="secondary"
+                          className={`text-[10px] sm:text-xs font-semibold px-1.5 sm:px-2 ${
+                            ['recarga', 'plano', 'compra_modulo', 'entrada', 'consulta', 'compra_login'].includes(transaction.type) 
+                              ? "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300"
+                              : "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300"
+                          }`}
+                        >
+                          {['recarga', 'plano', 'compra_modulo', 'entrada', 'consulta', 'compra_login'].includes(transaction.type) ? '+' : '-'}
+                          {formatCurrency(Math.abs(transaction.amount))}
+                        </Badge>
+                      </div>
+                    </div>
                   </div>
-                </div>
                 );
               })}
 

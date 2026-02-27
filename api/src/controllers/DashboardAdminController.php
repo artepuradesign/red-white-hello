@@ -16,9 +16,9 @@ class DashboardAdminController {
         try {
             error_log("DASHBOARD_ADMIN: Buscando estatísticas do dashboard");
             
-            // Saldo em Caixa - soma TODAS as entradas do central_cash + consultas realizadas
+            // Saldo em Caixa - soma apenas ENTRADAS positivas do central_cash (recargas, planos, compra_modulo) + consultas realizadas
             $cashQuery = "SELECT 
-                            COALESCE((SELECT SUM(ABS(amount)) FROM central_cash WHERE amount != 0), 0) +
+                            COALESCE((SELECT SUM(amount) FROM central_cash WHERE amount > 0 AND transaction_type IN ('recarga', 'plano', 'compra_modulo', 'entrada', 'compra_login')), 0) +
                             COALESCE((SELECT SUM(cost) FROM consultations WHERE status = 'completed' AND cost > 0), 0)
                           as total_cash";
             $cashStmt = $this->db->prepare($cashQuery);
@@ -372,6 +372,7 @@ class DashboardAdminController {
                         FROM central_cash cc
                         LEFT JOIN users u ON cc.user_id = u.id
                         LEFT JOIN wallet_transactions wt ON cc.reference_table = 'wallet_transactions' AND cc.reference_id = wt.id
+                        WHERE cc.amount > 0 AND cc.transaction_type IN ('recarga', 'plano', 'compra_modulo', 'entrada', 'compra_login')
                     )
                     UNION ALL
                     (
@@ -383,12 +384,12 @@ class DashboardAdminController {
                             0 as cash_balance_before,
                             0 as cash_balance_after,
                             u.full_name as user_name,
-                            NULL as user_email, NULL as user_login, u.id as user_id,
-                            NULL as user_cpf, NULL as user_telefone,
-                            NULL as user_saldo, NULL as user_saldo_plano,
-                            NULL as user_plano, NULL as user_status,
-                            NULL as user_codigo_indicacao,
-                            NULL as user_created_at,
+                            u.email as user_email, u.username as user_login, u.id as user_id,
+                            u.cpf as user_cpf, u.telefone as user_telefone,
+                            u.saldo as user_saldo, u.saldo_plano as user_saldo_plano,
+                            u.tipoplano as user_plano, u.status as user_status,
+                            u.codigo_indicacao as user_codigo_indicacao,
+                            u.created_at as user_created_at,
                             'saldo' as payment_method,
                             c.created_at,
                             NULL as external_id,

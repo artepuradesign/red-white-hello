@@ -63,21 +63,9 @@ const AdminCaixa = () => {
     <div className="space-y-4 sm:space-y-6">
       <DashboardTitleCard
         title="Saldo em Caixa"
-        subtitle="Todas as entradas: recargas, planos, consultas e compras"
+        subtitle="Consultas realizadas e compras na plataforma"
         icon={<DollarSign className="h-4 w-4 sm:h-5 sm:w-5" />}
         backTo="/dashboard/admin"
-        right={
-          <Button
-            onClick={() => loadTransactions(200, 'all')}
-            disabled={isLoading}
-            variant="outline"
-            size="sm"
-            className="h-8 sm:h-9"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline ml-2">Atualizar</span>
-          </Button>
-        }
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">

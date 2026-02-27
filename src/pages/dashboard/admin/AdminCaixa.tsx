@@ -15,11 +15,12 @@ const AdminCaixa = () => {
   }, []);
 
   // Filtrar apenas entradas do caixa (mesmo filtro do DashboardAdmin)
+  // Mesmo filtro do DashboardAdmin (sem filtrar por amount > 0)
   const caixaTransactions = transactions.filter(t => 
-    ['recarga', 'plano', 'compra_modulo', 'entrada', 'consulta', 'compra_login'].includes(t.type) && t.amount > 0
+    ['recarga', 'plano', 'compra_modulo', 'entrada', 'consulta', 'compra_login'].includes(t.type)
   );
 
-  const totalCaixa = caixaTransactions.reduce((sum, t) => sum + t.amount, 0);
+  const totalCaixa = caixaTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
   const formatCurrency = (value: number) => {
     return value.toLocaleString('pt-BR', {

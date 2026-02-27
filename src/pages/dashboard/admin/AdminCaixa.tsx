@@ -11,10 +11,15 @@ const AdminCaixa = () => {
   const [displayLimit, setDisplayLimit] = useState(50);
 
   useEffect(() => {
-    loadTransactions(200, 'caixa');
+    loadTransactions(200, 'all');
   }, []);
 
-  const totalCaixa = transactions.reduce((sum, t) => sum + t.amount, 0);
+  // Filtrar apenas entradas do caixa (mesmo filtro do DashboardAdmin)
+  const caixaTransactions = transactions.filter(t => 
+    ['recarga', 'plano', 'compra_modulo', 'entrada', 'consulta', 'compra_login'].includes(t.type) && t.amount > 0
+  );
+
+  const totalCaixa = caixaTransactions.reduce((sum, t) => sum + t.amount, 0);
 
   const formatCurrency = (value: number) => {
     return value.toLocaleString('pt-BR', {
@@ -62,7 +67,7 @@ const AdminCaixa = () => {
         backTo="/dashboard/admin"
         right={
           <Button
-            onClick={() => loadTransactions(200, 'caixa')}
+            onClick={() => loadTransactions(200, 'all')}
             disabled={isLoading}
             variant="outline"
             size="sm"
@@ -94,7 +99,7 @@ const AdminCaixa = () => {
           </CardHeader>
           <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
             <div className="text-xl sm:text-2xl font-bold">
-              {transactions.length}
+              {caixaTransactions.length}
             </div>
           </CardContent>
         </Card>
@@ -106,7 +111,7 @@ const AdminCaixa = () => {
           </CardHeader>
           <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
             <div className="text-xl sm:text-2xl font-bold">
-              {formatCurrency(transactions.length ? totalCaixa / transactions.length : 0)}
+              {formatCurrency(caixaTransactions.length ? totalCaixa / caixaTransactions.length : 0)}
             </div>
           </CardContent>
         </Card>
@@ -120,7 +125,7 @@ const AdminCaixa = () => {
               Histórico de Transações
             </CardTitle>
             <Badge variant="secondary" className="text-xs">
-              {transactions.length} registros
+              {caixaTransactions.length} registros
             </Badge>
           </div>
         </CardHeader>
@@ -130,9 +135,9 @@ const AdminCaixa = () => {
               <RefreshCw className="h-8 w-8 animate-spin text-blue-500 mx-auto mb-4" />
               <p className="text-muted-foreground">Carregando transações...</p>
             </div>
-          ) : transactions.length > 0 ? (
+          ) : caixaTransactions.length > 0 ? (
             <div className="space-y-1.5 sm:space-y-2">
-              {transactions.slice(0, displayLimit).map((transaction, index) => {
+              {caixaTransactions.slice(0, displayLimit).map((transaction, index) => {
                 const tx = transaction as any;
                 return (
                   <div 
@@ -192,14 +197,14 @@ const AdminCaixa = () => {
                 );
               })}
 
-              {transactions.length > displayLimit && (
+              {caixaTransactions.length > displayLimit && (
                 <div className="text-center pt-2">
                   <Button 
                     variant="outline" 
                     onClick={() => setDisplayLimit(prev => prev + 50)}
                     className="w-full sm:w-auto"
                   >
-                    Carregar mais ({transactions.length - displayLimit} restantes)
+                    Carregar mais ({caixaTransactions.length - displayLimit} restantes)
                   </Button>
                 </div>
               )}

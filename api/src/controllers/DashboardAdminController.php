@@ -18,7 +18,7 @@ class DashboardAdminController {
             
             // Saldo em Caixa - soma apenas ENTRADAS positivas do central_cash (recargas, planos, compra_modulo) + consultas realizadas
             $cashQuery = "SELECT 
-                            COALESCE((SELECT SUM(amount) FROM central_cash WHERE amount > 0 AND transaction_type IN ('recarga', 'plano', 'compra_modulo', 'entrada', 'compra_login')), 0) +
+                            COALESCE((SELECT SUM(amount) FROM central_cash WHERE amount > 0 AND transaction_type IN ('recarga', 'plano', 'compra_modulo', 'entrada', 'compra_login', 'consulta')), 0) +
                             COALESCE((SELECT SUM(cost) FROM consultations WHERE status = 'completed' AND cost > 0), 0)
                           as total_cash";
             $cashStmt = $this->db->prepare($cashQuery);
@@ -372,7 +372,7 @@ class DashboardAdminController {
                         FROM central_cash cc
                         LEFT JOIN users u ON cc.user_id = u.id
                         LEFT JOIN wallet_transactions wt ON cc.reference_table = 'wallet_transactions' AND cc.reference_id = wt.id
-                        WHERE cc.amount > 0 AND cc.transaction_type IN ('recarga', 'plano', 'compra_modulo', 'entrada', 'compra_login')
+                        WHERE cc.amount > 0 AND cc.transaction_type IN ('recarga', 'plano', 'compra_modulo', 'entrada', 'compra_login', 'consulta')
                     )
                     UNION ALL
                     (
